@@ -1,0 +1,83 @@
+import processing.serial.*;
+import processing.video.*;
+
+Serial myPort;       
+int linefeed = 10;   // Linefeed in ASCII
+int numSensors = 3;  // we will be expecting for reading data from four sensors
+int sensors[];       // array to read the 4 values
+int pSensors[];      // array to store the previuos reading, usefur for comparing
+// actual reading with the last one
+
+Capture cam;
+
+void setup() {
+  
+   size(640, 360);
+ cam = new Capture(this, 640, 360, 30);
+ cam.start();
+ 
+ 
+  //size(200, 200);  
+  // List all the available serial ports in the output pane. 
+  // You will need to choose the port that the Wiring board is 
+  // connected to from this list. The first port in the list is 
+  // port #0 and the third port in the list is port #2. 
+  println(Serial.list()); 
+  
+  myPort = new Serial(this, Serial.list()[1], 9600);
+  // read bytes into a buffer until you get a linefeed (ASCII 10):
+  myPort.bufferUntil(linefeed);
+}
+
+void draw() {
+  if((pSensors != null)&&(sensors != null)) { 
+    
+    // do something with the values read sensors[0] .. sensors[3]
+
+if(cam.available()) {
+   cam.read();
+ }
+ image(cam, 0, 0);
+ if (mousePressed) {
+   cam.start();
+   saveFrame("line-1234.png");
+   cam.stop();
+   PImage sunflower = loadImage("line-1234.png");
+   int a, b, c;
+   a = 180-(85/(sensors[0]+1));
+   b = 180-(85/(sensors[1]+1));
+   c = 180-(85/(sensors[2]+1));
+   tint(a,b,c);  
+    image(sunflower,0,0);
+ }
+  }
+  
+}
+
+void serialEvent(Serial myPort) {
+
+  // read the serial buffer:
+  String myString = myPort.readStringUntil(linefeed);
+
+  // if you got any bytes other than the linefeed:
+  if (myString != null) {
+
+    myString = trim(myString);
+
+    // split the string at the commas
+    // and convert the sections into integers:
+
+    pSensors = sensors;
+    sensors = int(split(myString, ','));
+
+    // print out the values you got:
+    
+    for (int sensorNum = 0; sensorNum < sensors.length; sensorNum++) {
+      print("Sensor " + sensorNum + ": " + sensors[sensorNum] + "\t");
+    }
+    
+    // add a linefeed after all the sensor values are printed:
+    println();
+
+  }
+}
